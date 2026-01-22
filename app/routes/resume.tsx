@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from "react-router";
 import { usePuterStore } from "~/lib/puter";
 import { useEffect, useState } from "react";
 import Summary from "~/components/Summary";
-import Ats from "~/components/ATS";
+import ATS from "~/components/ATS";
 import Details from "~/components/Details";
 
 export const meta = () => {
@@ -17,14 +17,18 @@ const Resume = () => {
   const { id } = useParams();
   const [imageUrl, setImageUrl] = useState("");
   const [resumeUrl, setResumeUrl] = useState("");
-  const [feedback, setFeedback] = useState<feedback || null>(null);
+const [feedback, setFeedback] = useState<any>(null);
+
   const navigate = useNavigate();
 
-   useEffect (()=> {
-        if( !isLoading && !auth.isAuthenticated)navigate(`/auth?next=/resume${id}`);
-    },[auth.isAuthenticated])
+  useEffect(() => {
+    if (!isLoading && !auth.isAuthenticated && id) {
+      navigate(`/auth?next=/resume/${id}`);
+    }
+  }, [isLoading, auth.isAuthenticated, id, navigate]);
 
   useEffect(() => {
+    if (!id) return;
     const loadResume = async () => {
       const resume = await kv.get(`resume-${id}`);
       if (!resume) return;
@@ -53,7 +57,7 @@ const Resume = () => {
     };
 
     loadResume();
-  }, [id]);
+  }, [id, fs, kv]);
 
   return (
     <main className="pt-0">
@@ -72,18 +76,17 @@ const Resume = () => {
 
       <div className="flex flex-row w-full max-lg:flex-col-reverse">
         <section className="feedback-section bg-[url('/images/bg-small.svg')] bg-cover h-screen sticky top-0 flex items-center justify-center">
-          <section className= "feedback-section">
-            <h2 className="text-4xl text-black! font-bold">Resume Review</h2>
-          {feedback ? (
-            <div className="flex flex-col gap-8 animate-in fade-in duration-1000">
-                  <Summary feedback={feedback} />       
-                  <ATS score ={feedback.ATS.score || 0} sugestions={feedback.padStart.tips || []} />
-                  <Details feedback={feedback} />
-            </div>
-          ): (
-            <img src="/images/resume-scan-2.gif" className="w-full"></img>
-          )}
-          
+          <section className="feedback-section">
+            <h2 className="text-4xl text-black font-bold">Resume Review</h2>
+            {feedback ? (
+              <div className="flex flex-col gap-8 animate-in fade-in duration-1000">
+                <Summary feedback={feedback} />
+                <ATS score={feedback?.ATS?.score ?? 0} suggestions={feedback?.ATS?.tips ?? []} />
+                <Details feedback={feedback} />
+              </div>
+            ) : (
+              <img src="/images/resume-scan-2.gif" className="w-full" />
+            )}
           </section>
           {imageUrl && resumeUrl && (
             <div className="animate-in fade-in duration-1000 gradient-border max-sm:m-0 h-[90%] max-w-xl:h-fit w-fit">
@@ -95,6 +98,7 @@ const Resume = () => {
               />
             </div>
           )}
+
         </section>
       </div>
     </main>

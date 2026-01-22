@@ -3,10 +3,10 @@ import type { Route } from "./+types/home";
 
 import Navbar from "~/components/Navbar";
 import ResumeCard from "~/components/ResumeCard";
-import { resumes } from "~/constants";
 import { useEffect } from 'react';
 import { usePuterStore } from '~/lib/puter';
-import {useLocation, useNavigate} from "react-router";
+import {useNavigate} from "react-router";
+import {useState} from 'react';
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -17,16 +17,34 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
 
-const { auth} = usePuterStore();
+const { auth, kv} = usePuterStore();
      
-    const location=useLocation();
-    const next= location.search.split('next=')[1];
     const navigate=useNavigate();
-
+    const [resumes, setResumes] = useState<Resume[]>([]);
+    const [loadingResumes, setLoadingResumes] = useState(false);
     
-    useEffect (()=> {
-        if(!auth.isAuthenticated) navigate('/auth?next=/');
-    },[auth.isAuthenticated])
+    
+    useEffect(() => {
+        if (!auth.isAuthenticated) navigate('/auth?next=/');
+    }, [auth.isAuthenticated, navigate]);
+
+    useEffect(()=> {
+      const loadResumes = async () => {
+        setLoadingResumes(true);
+
+        const items = (await kv.list('resume:*', true)) as KVItem[] | string[] | undefined;
+
+        const parsedResumes = Array.isArray(items)
+          ? (items as KVItem[]).map((r) => JSON.parse(r.value) as Resume)
+          : [];
+
+        console.log('parsedResumes', parsedResumes);
+        setResumes(parsedResumes || []);
+        setLoadingResumes(false);
+      };
+
+      loadResumes();
+    }, [kv]);
 
   return (
     <main className="bg-[url('/images/bg-main.svg')] bg-cover">
@@ -34,16 +52,21 @@ const { auth} = usePuterStore();
       <section className="main-section">
         <div className="page-heading py-16">
           <h1>Track Your Applications & Resume Ratings</h1>
-          <h2>Review your submissions and check AI-powered feedback.</h2>
-        </div>
+          {!loadingResumes && resumes?.length === 0 ? (
 
-        {resumes.length > 0 && (
-         <div className="
-                     grid
-                     grid-cols-1
-                     sm:grid-cols-2
-                     lg:grid-cols-3
-                      gap-6 " >
+          
+           <h2>Review your submissions and check AI-powered feedback.</h2>
+          ):(
+           <h2>Review your submissions and check AI-powered feedback.</h2>
+        )}
+        </div> 
+        {loadingResumes && (
+          <div className="flex flex-col items-center justify-center">
+            <img src="/images/resume-scan-2.gif" className="w-50" />
+          </div>
+        )}
+        {!loadingResumes && resumes.length > 0 && (
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                {resumes.map((resume) => (
               <ResumeCard key={resume.id} resume={resume} />
             ))}
