@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface ScoreBadgeProps {
   score: number;
 }
@@ -16,7 +14,7 @@ const ScoreBadge: React.FC<ScoreBadgeProps> = ({ score }) => {
     badgeText = 'Good Start';
   } else {
     badgeColor = 'bg-badge-red text-red-600';
-    badgeText = 'Needs Improvement';
+    badgeText = 'Needs Work';
   }
 
   return (
